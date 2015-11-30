@@ -1,7 +1,6 @@
 upstream <%= node['hostname'] %>_upstream {
   # This is the socket we configured in unicorn.rb
-  server unix:<%= node['nginx']['unix_sock'] %>;
-    ip_hash;
+  ip_hash;
   <%= node['nginx']['unix_sockets'].each do |socket| %>
     server unix:<%= socket %>; max_fails=1 fail_timeout=15s;
   <% end %>
