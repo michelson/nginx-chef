@@ -1,0 +1,40 @@
+upstream <%= node['hostname'] %>_upstream {
+  # This is the socket we configured in unicorn.rb
+  server <%= node['nginx']['unix_sock'] %>;
+}
+
+server {
+  listen   <%= node['nginx']['port'] -%>;
+  server_name  <%= node['hostname'] %>;
+
+  access_log  <%= node['nginx']['log_dir'] %>/localhost.access.log;
+
+  location / {
+    root   <%= node['nginx']['default_root'] %>;
+
+    proxy_set_header  X-Real-IP  $remote_addr;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+
+    # If the file exists as a static file serve it directly without
+    # running all the other rewite tests on it
+    if (-f $request_filename) {
+        break;
+    }
+
+    if (-f $request_filename/index.html) {
+        rewrite (.*) $1/index.html break;
+    }
+
+    if (-f $request_filename.html) {
+        rewrite (.*) $1.html break;
+    }
+
+    if (!-f $request_filename) {
+        proxy_pass http://<%= node['hostname'] %>_upstream;
+        break;
+    }
+  }
+
+}
